@@ -1,0 +1,5 @@
+reportlab
+pypdf
+openpyxl
+pandas
+Pillow

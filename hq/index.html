@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaizen XP HQ</title>
+<style>
+  :root {
+    --black: #0d0d0d;
+    --panel: #151515;
+    --line: #2a2a2a;
+    --gold: #c9a84c;
+    --cream: #f3efe4;
+    --muted: #8d8a82;
+    --green: #5fbf77;
+    --amber: #e8a33d;
+    --red: #e0654f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--black); color: var(--cream);
+    font-family: Helvetica, Arial, sans-serif; font-size: 14px; }
+  #app { display: grid; grid-template-columns: 1fr 380px; grid-template-rows: 52px 1fr; height: 100vh; }
+  header { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 0 16px;
+    border-bottom: 1px solid var(--line); background: var(--black); }
+  header h1 { font-size: 16px; letter-spacing: .14em; margin: 0; color: var(--gold); white-space: nowrap; }
+  header .motto { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .pill { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: bold; letter-spacing: .08em;
+    border: 1px solid var(--line); white-space: nowrap; }
+  .pill.live { color: var(--green); border-color: var(--green); }
+  .pill.demo { color: var(--amber); border-color: var(--amber); }
+  .pill.off { color: var(--red); border-color: var(--red); }
+  #clock { color: var(--muted); font-variant-numeric: tabular-nums; }
+  #stage { position: relative; overflow: hidden; }
+  #stage canvas { display: block; }
+  #labels { position: absolute; inset: 0; pointer-events: none; }
+  .tag { text-align: center; transform: translateY(-6px); pointer-events: auto; cursor: pointer; }
+  .tag b { display: block; font-size: 12px; color: var(--cream); text-shadow: 0 1px 3px #000; letter-spacing: .03em; }
+  .tag span { display: inline-block; margin-top: 2px; font-size: 10px; padding: 1px 6px; border-radius: 4px;
+    background: rgba(13,13,13,.8); color: var(--muted); max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tag.working span { color: var(--black); background: var(--gold); }
+  .tag.waiting span { color: var(--black); background: var(--amber); }
+  .tag.done span { color: var(--black); background: var(--green); }
+  .zone { font-size: 11px; letter-spacing: .3em; color: rgba(201,168,76,.55); font-weight: bold; }
+  #banner { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: var(--amber); color: var(--black);
+    padding: 8px 14px; border-radius: 6px; font-weight: bold; display: none; max-width: 90%; text-align: center; }
+  #hint { position: absolute; left: 12px; bottom: 10px; color: var(--muted); font-size: 11px; }
+  aside { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; }
+  section { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 11px; letter-spacing: .16em; color: var(--gold); margin: 0 0 10px; text-transform: uppercase; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .kpi { background: var(--black); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+  .kpi .v { font-size: 20px; font-weight: bold; color: var(--cream); font-variant-numeric: tabular-nums; }
+  .kpi .l { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .agent { display: grid; grid-template-columns: 10px 1fr auto; gap: 4px 10px; align-items: center; padding: 7px 6px;
+    border-radius: 6px; cursor: pointer; }
+  .agent:hover, .agent.sel { background: #1e1e1e; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; }
+  .dot.working { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+  .dot.waiting { background: var(--amber); }
+  .dot.done { background: var(--green); }
+  .agent .n { font-weight: bold; }
+  .agent .w { font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+  .agent .a { grid-column: 2 / -1; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .agent .a em { color: var(--cream); font-style: normal; }
+  .bar { grid-column: 2 / -1; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--gold); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; font-weight: normal; color: var(--muted); font-size: 10px; padding: 4px 3px; }
+  td { padding: 5px 3px; border-top: 1px solid var(--line); }
+  td.c, th.c { text-align: center; }
+  .ok { color: var(--green); } .bad { color: var(--red); } .warn { color: var(--amber); } .none { color: #555; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #feed { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  #feed li { padding: 5px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 54px 1fr; gap: 6px; }
+  #feed li:first-child { border-top: 0; }
+  #feed time { color: var(--muted); font-variant-numeric: tabular-nums; }
+  #feed b { color: var(--gold); font-weight: normal; }
+  .empty { color: var(--muted); font-size: 12px; }
+  .compact .tag.idle, .compact .zone { display: none; }
+  .compact .tag b { font-size: 11px; }
+  @media (max-width: 860px) {
+    #app { grid-template-columns: 1fr; grid-template-rows: 52px 60vh auto; height: auto; }
+    aside { border-left: 0; overflow: visible; }
+    header .motto { display: none; }
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>KAIZEN XP HQ</h1>
+    <div class="motto">Do what nobody else can be bothered to do, and you'll get what nobody else gets.</div>
+    <span id="conn" class="pill off">CONNECTING</span>
+    <span id="clock"></span>
+  </header>
+  <div id="stage">
+    <div id="labels"></div>
+    <div id="banner"></div>
+    <div id="hint">Drag to look around. Scroll to zoom. Tap an agent to follow it.</div>
+  </div>
+  <aside>
+    <section>
+      <h2>Right now</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k-working">0</div><div class="l">agents working</div></div>
+        <div class="kpi"><div class="v" id="k-tools">0</div><div class="l">actions this session</div></div>
+        <div class="kpi"><div class="v" id="k-files">0</div><div class="l">files written</div></div>
+      </div>
+    </section>
+    <section>
+      <h2>The team</h2>
+      <div id="agents"></div>
+    </section>
+    <section>
+      <h2>Product pipeline</h2>
+      <table>
+        <thead><tr><th>Product</th><th class="c">QA</th><th class="c">UX</th><th class="c">Listing</th><th class="c">Draft</th></tr></thead>
+        <tbody id="products"></tbody>
+      </table>
+    </section>
+    <section class="two">
+      <div>
+        <h2>Issues</h2>
+        <div id="issues" class="empty">None logged yet</div>
+      </div>
+      <div>
+        <h2>Decisions</h2>
+        <div id="decisions" class="empty">None logged yet</div>
+      </div>
+    </section>
+    <section>
+      <h2>Shop, latest week</h2>
+      <div id="shop" class="empty">No stats yet. Add rows to data/exports/stats.csv.</div>
+    </section>
+    <section>
+      <h2>Live feed</h2>
+      <ul id="feed"><li class="empty">Waiting for the agents...</li></ul>
+    </section>
+  </aside>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
