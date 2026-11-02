@@ -20,6 +20,8 @@
 </script>
 <style>
 html.mo [data-reveal],html.mo .hero-copy>*,html.mo .hero-meta>*{opacity:0}
+/* Motion animates form steps itself (src/motion.js) */
+html.mo form.stepped .f-step.cur{animation:none}
 .scroll-prog{position:fixed;left:0;right:0;top:0;height:3px;z-index:60;background:linear-gradient(90deg,#5fae15,#7ed321);transform-origin:0 50%;transform:scaleX(0);pointer-events:none}
 html:not(.mo) .scroll-prog{display:none}
 </style>

@@ -10,7 +10,7 @@ npm run preview  # serve the build
 ```
 
 - `index.html`: the page (styles, the logo intro and the 3D proof report animation are inline).
-- `src/motion.js`: the Motion layer (hero headline, section reveals, Founding Five, scroll progress, parallax, FAQ accordion).
+- `src/motion.js`: the Motion layer (hero headline, section reveals, Founding Five, scroll progress, parallax, FAQ accordion, booking form steps, errors and the "Received" stamp, area checker).
 - `public/assets/`: logo images.
 
 All Motion effects are off for visitors with "reduce motion" switched on, and the page still works if the script fails to load.

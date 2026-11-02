@@ -27,6 +27,8 @@ if (reduce) {
     foundingPlaces();
     scrollEffects();
     faqAccordion();
+    bookingForm();
+    areaChecker();
   } catch (err) {
     // Never leave content hidden if something goes wrong
     console.error(err);
@@ -273,6 +275,110 @@ function faqAccordion() {
         if (!wantOpen) details.open = false;
         clear();
       });
+    });
+  });
+}
+
+/* ---------- 6. Booking form: steps slide in the direction you're going, the card resizes smoothly,
+               mistakes give a small shake, and a sent request lands with a "Received" stamp ---------- */
+
+function bookingForm() {
+  const card = $(".form-card");
+  const form = $("#wr-form");
+  if (!card || !form) return;
+  const steps = $$(".f-step", form);
+  let current = steps.findIndex((s) => s.classList.contains("cur"));
+  let lastH = card.offsetHeight;
+  let sizing = null;
+
+  // Remember the card's height so a change can grow or shrink from it instead of jumping
+  new ResizeObserver(() => {
+    if (!sizing) lastH = card.offsetHeight;
+  }).observe(card);
+
+  function resizeFrom(fromH) {
+    const toH = card.offsetHeight;
+    if (Math.abs(toH - fromH) < 2) return;
+    if (sizing) sizing.stop();
+    card.style.overflow = "hidden";
+    sizing = animate(card, { height: [fromH, toH] }, { duration: 0.45, ease: EASE_OUT });
+    const mine = sizing;
+    mine.then(() => {
+      if (sizing !== mine) return;
+      sizing = null;
+      card.style.height = card.style.overflow = "";
+      lastH = card.offsetHeight;
+    });
+  }
+
+  // Step changes: the page script swaps the .cur class, we animate the result
+  new MutationObserver(() => {
+    const next = steps.findIndex((s) => s.classList.contains("cur"));
+    if (next === current || next < 0) return;
+    const dir = next > current ? 1 : -1;
+    current = next;
+    const fromH = lastH;
+    card.style.height = "";
+    const parts = Array.from(steps[next].children);
+    parts.forEach((el) => (el.style.opacity = "0"));
+    resizeFrom(fromH);
+    animate(
+      parts,
+      { opacity: [0, 1], x: [28 * dir, 0] },
+      { delay: stagger(0.05, { startDelay: 0.08 }), opacity: { duration: 0.35 }, x: { type: "spring", visualDuration: 0.5, bounce: 0.15 } }
+    ).then(() => parts.forEach((el) => (el.style.transform = "")));
+  }).observe(form, { subtree: true, attributes: true, attributeFilter: ["class"] });
+
+  // Errors: shake the field and slide the message in
+  $$(".err", form).forEach((err) => {
+    new MutationObserver(() => {
+      if (err.hidden) return;
+      const field = err.closest("fieldset, .fld") || err.parentElement;
+      const control = $("select, input:not([type=radio]), .opts", field) || field;
+      animate(control, { x: [0, -8, 7, -5, 4, -2, 0] }, { duration: 0.45, ease: "easeOut" }).then(() => (control.style.transform = ""));
+      animate(err, { opacity: [0, 1], y: [-6, 0] }, { duration: 0.3, ease: EASE_OUT }).then(() => (err.style.transform = ""));
+    }).observe(err, { attributes: true, attributeFilter: ["hidden"] });
+  });
+
+  // Sent: the card settles to its new size, the stamp slams down, the recap rows follow
+  const done = $("#wr-done");
+  if (!done) return;
+  new MutationObserver(() => {
+    if (done.hidden) return;
+    const fromH = lastH;
+    const stamp = $(".stamp-s", done);
+    const rest = Array.from(done.children).filter((el) => el !== stamp && el.id !== "wr-recap");
+    const rows = $$("#wr-recap > div", done);
+    [...rest, ...rows].forEach((el) => (el.style.opacity = "0"));
+    if (stamp) stamp.style.opacity = "0";
+    card.style.height = "";
+    resizeFrom(fromH);
+
+    if (stamp) {
+      animate(stamp, { opacity: [0, 0.92], scale: [2.3, 1], rotate: [-22, -7] }, { delay: 0.15, duration: 0.32, ease: [0.5, 0, 0.9, 0.5] }).then(() => {
+        animate(card, { scale: [1, 0.985, 1] }, { duration: 0.35, ease: EASE_OUT }).then(() => (card.style.transform = ""));
+      });
+    }
+    rise(rest, { y: 16, delay: 0.5, each: 0.08 });
+    rise(rows, { y: 10, delay: 0.75, each: 0.05 });
+  }).observe(done, { attributes: true, attributeFilter: ["hidden"] });
+}
+
+/* ---------- 7. Area checker: the answer pops in, with a little bounce for a yes ---------- */
+
+function areaChecker() {
+  const out = $("#area-out");
+  const formEl = $("#checker");
+  if (!out || !formEl) return;
+  formEl.addEventListener("submit", () => {
+    // The page script writes the answer in its own submit handler; animate on the next frame
+    requestAnimationFrame(() => {
+      const yes = out.classList.contains("yes");
+      animate(
+        out,
+        { opacity: [0, 1], y: [8, 0], scale: yes ? [0.9, 1] : [1, 1] },
+        { opacity: { duration: 0.25 }, y: { type: "spring", visualDuration: 0.4, bounce: yes ? 0.5 : 0.1 }, scale: { type: "spring", visualDuration: 0.4, bounce: 0.5 } }
+      ).then(() => (out.style.transform = ""));
     });
   });
 }
