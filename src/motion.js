@@ -117,7 +117,7 @@ function heroEntrance() {
       { delay: stagger(0.045), duration: 0.7, ease: EASE_OUT }
     ).then(() => words.forEach((w) => (w.style.filter = "")));
     rise(others, { y: 18, delay: 0.25, each: 0.09 });
-    // Lime glow behind the report breathes in
+    // Blue glow behind the report breathes in
     const glow = $(".stage-glow");
     if (glow) animate(glow, { opacity: [0, 1], scale: [0.7, 1] }, { duration: 1.4, ease: EASE_OUT });
   };
@@ -170,7 +170,7 @@ function reveals() {
   });
 }
 
-/* ---------- 3. Founding Five: the five places drop in and their lime bars draw across ---------- */
+/* ---------- 3. Founding Five: the five places drop in and their blue bars draw across ---------- */
 
 function foundingPlaces() {
   const list = $(".places");
